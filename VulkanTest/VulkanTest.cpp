@@ -13,6 +13,7 @@
 #include <vector>
 #include <cstring>
 #include <map>
+#include <set>
 
 #include <optional>
 
@@ -118,6 +119,7 @@ private:
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
 	VkQueue graphicsQueue; //no need to clean
+	VkQueue presentQueue;
 	VkSurfaceKHR surface;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
