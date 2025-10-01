@@ -1,3 +1,5 @@
 # VulkanTest
 
-Requirements: Vulkan API, GLFW, GLM
+A project created by Jason LIN
+
+System Requirements: Vulkan API, GLFW, GLM
