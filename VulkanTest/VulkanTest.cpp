@@ -268,7 +268,21 @@ private:
 
 		createImageViews();
 
+		createRenderPass();
+
 		createGraphicsPipeline();
+	}
+
+	void createRenderPass() {
+		VkAttachmentDescription colorAttachment{};
+		colorAttachment.format = swapChainImageFormat;
+		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // clear display always
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // to display
+		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // dont care previous layout
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // operated when rendering end, swap chain start
 	}
 
 	void createGraphicsPipeline() {
