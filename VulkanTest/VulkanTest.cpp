@@ -827,6 +827,8 @@ private:
 	}
 
 	void cleanup() {
+		vkDestroyPipeline(device, graphicsPipeline, nullptr);
+
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 
 		vkDestroyRenderPass(device, renderPass, nullptr);
