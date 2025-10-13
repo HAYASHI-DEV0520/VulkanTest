@@ -67,7 +67,7 @@ private:
 	const bool enableValidationLayers = true;
 #endif
 
-	const uint32_t WIDTH = 1400;
+	const uint32_t WIDTH = 1100;
 	const uint32_t HEIGHT = 800;
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -111,9 +111,12 @@ private:
 	};
 
 	const std::vector<Vertex> vertices = {
-		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+		{{0.5f, -0.5f}, {0.5f, 0.0f, 1.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}},
+		{{-0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}},
+		{{-0.5f, -0.5f}, {0.0f, 0.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.5f, 0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}}
 	};
 
 	struct QueueFamilyIndices {
