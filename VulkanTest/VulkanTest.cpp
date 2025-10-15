@@ -1107,7 +1107,9 @@ private:
 			i++;
 		}
 
-
+		if (!indices.transferFamily.has_value()) {
+			indices.transferFamily = indices.graphicsFamily;
+		}
 
 		return indices;
 	}
