@@ -125,7 +125,7 @@ private:
 	};
 
 	const std::vector<uint16_t> indices = { // using uint16_t because less than 65535 vertices
-		0, 1, 2, 2, 3, 0
+		0, 1, 2
 	};
 
 	struct QueueFamilyIndices {
