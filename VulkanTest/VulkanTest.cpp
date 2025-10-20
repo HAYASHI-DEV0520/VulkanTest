@@ -233,7 +233,7 @@ private:
 		glfwSetWindowUserPointer(window, this);
 		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 		inputManager.registerKey(GLFW_KEY_SPACE);
-		inputManager.registerEvent(GLFW_KEY_SPACE, std::bind(reinterpret_cast<void (ModelManager::*)(InputManager*)>(&ModelManager::rotateAuto), &modelManager, std::placeholders::_1));
+		inputManager.registerEvent(GLFW_KEY_SPACE, [&](InputManager* input) { modelManager.rotateAuto(input); });
 	}
 
 	void initVulkan() {
