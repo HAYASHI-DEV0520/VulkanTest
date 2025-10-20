@@ -26,6 +26,9 @@
 
 #include <chrono>
 
+#include "ModelManager.h"
+#include "InputManager.h"
+
 
 
 class HelloTriangleApplication {
@@ -76,6 +79,9 @@ private:
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
 	std::vector<void*> uniformBuffersMapped;
+
+	ModelManager modelManager;
+	InputManager inputManager;
 
 
 #ifdef NDEBUG
@@ -226,6 +232,8 @@ private:
 		window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan test", nullptr, nullptr);
 		glfwSetWindowUserPointer(window, this);
 		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+		inputManager.registerKey(GLFW_KEY_SPACE);
+		inputManager.registerEvent(GLFW_KEY_SPACE, std::bind(&ModelManager::rotateAuto, &modelManager));
 	}
 
 	void initVulkan() {
@@ -1292,6 +1300,7 @@ private:
 	void mainLoop() {
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
+			inputManager.pollEvents(window);
 			drawFrame();
 		}
 
@@ -1358,14 +1367,10 @@ private:
 	}
 
 	void updateUniformBuffer(uint32_t currentImage) {
-		static auto startTime = std::chrono::high_resolution_clock::now();
 
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		
 		UniformBufferObject ubo{};
-		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		ubo.view = glm::lookAt(glm::vec3(0.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		ubo.model = modelManager.getModel();
+ 		ubo.view = glm::lookAt(glm::vec3(0.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
 		ubo.proj[1][1] *= -1; // image will be rendered upside down
 		
