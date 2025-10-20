@@ -1,5 +1,5 @@
 #include "ModelManager.h"
-
+#include "InputManager.h"
 #include <chrono>
 
 glm::mat4 ModelManager::getModel()
@@ -17,7 +17,7 @@ void ModelManager::rotate(glm::vec3 axis, float angle)
 	model = glm::rotate(model, angle, axis);
 }
 
-void ModelManager::rotateAuto(void)
+void ModelManager::rotateAuto(InputManager *inputManager)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 

@@ -7,7 +7,7 @@
 class InputManager
 {
 public:
-	using InputEvent = std::function<void()>;
+	using InputEvent = std::function<void(InputManager*)>;
 
 	void pollEvents(GLFWwindow*);
 
@@ -16,8 +16,15 @@ public:
 	void registerEvent(int, InputEvent);
 
 	bool isPressed(int);
+
+	enum class KeyStatus {
+		PRESSED, HOLD, RELEASED, UNPRESS
+	};
+
+	KeyStatus getKeyStatus(int);
 private:
 	std::unordered_map<int, bool> keyStates;
 	std::unordered_map<int, InputEvent> keyEvents;
+	std::unordered_map<int, KeyStatus> keyStatus;
 };
 
