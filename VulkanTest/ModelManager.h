@@ -3,6 +3,7 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include "InputManager.h"
+#include "TimeManager.h"
 
 class ModelManager
 {
@@ -18,5 +19,6 @@ private:
 	float duration;
 	float angle;
 	glm::vec3 axis;
+	TimeManager time;
 };
 

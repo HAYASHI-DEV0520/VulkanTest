@@ -136,6 +136,7 @@
   <ItemGroup>
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="ModelManager.cpp" />
+    <ClCompile Include="TimeManager.cpp" />
     <ClCompile Include="VulkanTest.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="ModelManager.h" />
+    <ClInclude Include="TimeManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

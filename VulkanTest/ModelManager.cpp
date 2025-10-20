@@ -1,6 +1,7 @@
 #include "ModelManager.h"
 #include "InputManager.h"
 #include <chrono>
+#include <GLFW/glfw3.h>
 
 glm::mat4 ModelManager::getModel()
 {
@@ -19,11 +20,20 @@ void ModelManager::rotate(glm::vec3 axis, float angle)
 
 void ModelManager::rotateAuto(InputManager *inputManager)
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-	model = glm::rotate(glm::mat4(1.0f), time * angle, axis);
+	switch (inputManager->getKeyStatus(GLFW_KEY_SPACE)) {
+	case InputManager::KeyStatus::PRESSED:
+		time.recordTime();
+		break;
+	case InputManager::KeyStatus::HOLD:
+		if (time.getDuration() < 0) {
+			break;
+		}
+		model = glm::rotate(model, time.getDuration() * angle, axis);
+		time.recordTime();
+		break;
+	default:
+		break;
+	}
 }
 
 ModelManager::ModelManager() {
