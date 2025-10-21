@@ -22,6 +22,7 @@ void ModelManager::rotateAuto(InputManager *inputManager)
 {
 	switch (inputManager->getKeyStatus(GLFW_KEY_SPACE)) {
 	case InputManager::KeyStatus::PRESSED:
+		model = glm::rotate(model, glm::radians(5.0f), axis);
 		time.recordTime();
 		break;
 	case InputManager::KeyStatus::HOLD:
