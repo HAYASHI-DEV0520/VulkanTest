@@ -31,6 +31,31 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 	}
 }
 
+void CameraManager::moveByKey(InputManager* input, int KEY)
+{
+	switch (input->getKeyStatus(KEY)) {
+	case InputManager::KeyStatus::HOLD:
+		switch (KEY) {
+		case GLFW_KEY_W:
+			target.z -= time.getDuration() * movement;
+			break;
+		case GLFW_KEY_S:
+			target.z += time.getDuration() * movement;
+			break;
+		case GLFW_KEY_A:
+			target.x -= time.getDuration() * movement;
+			break;
+		case GLFW_KEY_D:
+			target.x += time.getDuration() * movement;
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+	time.recordTime();
+}
+
 CameraManager::CameraManager()
 {
 	radius = 3;

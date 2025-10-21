@@ -239,7 +239,17 @@ private:
 			app->cameraManager.mouseCallback(window, xpos, ypos);
 			});
 		inputManager.registerKey(GLFW_KEY_SPACE);
+		inputManager.registerKey(GLFW_KEY_W);
+		inputManager.registerKey(GLFW_KEY_A);
+		inputManager.registerKey(GLFW_KEY_S);
+		inputManager.registerKey(GLFW_KEY_D);
 		inputManager.registerEvent(GLFW_KEY_SPACE, [&](InputManager* input) { modelManager.rotateAuto(input); });
+		inputManager.registerEvent(GLFW_KEY_W, [&](InputManager* input) {cameraManager.moveByKey(input, GLFW_KEY_W); });
+		inputManager.registerEvent(GLFW_KEY_S, [&](InputManager* input) {cameraManager.moveByKey(input, GLFW_KEY_S); });
+		inputManager.registerEvent(GLFW_KEY_A, [&](InputManager* input) {cameraManager.moveByKey(input, GLFW_KEY_A); });
+		inputManager.registerEvent(GLFW_KEY_D, [&](InputManager* input) {cameraManager.moveByKey(input, GLFW_KEY_D); });
+
+	
 	}
 
 	void initVulkan() {
@@ -1381,7 +1391,7 @@ private:
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
-	void updateUniformBuffer(uint32_t currentImage) {
+	void updateUniformBuffer(uint32_t currentFrame) {
 
 		UniformBufferObject ubo{};
 		ubo.model = modelManager.getModel();
@@ -1389,7 +1399,7 @@ private:
 		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
 		ubo.proj[1][1] *= -1; // image will be rendered upside down
 		
-		memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+		memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 	}
 
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
