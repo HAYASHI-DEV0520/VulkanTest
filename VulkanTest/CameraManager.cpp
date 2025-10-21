@@ -17,8 +17,8 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 		lastX = xpos;
 		lastY = ypos;
 	}
-	float xoffset = static_cast<float>(xpos) - lastX;
-	float yoffset = lastY - static_cast<float>(ypos);
+	float xoffset = (float)xpos - lastX;
+	float yoffset = lastY - float(ypos);
 	lastX = xpos;
 	lastY = ypos;
 
