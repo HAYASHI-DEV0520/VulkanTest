@@ -17,8 +17,8 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 		lastX = xpos;
 		lastY = ypos;
 	}
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos;
+	float xoffset = static_cast<float>(xpos) - lastX;
+	float yoffset = lastY - static_cast<float>(ypos);
 	lastX = xpos;
 	lastY = ypos;
 
@@ -31,22 +31,33 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 	}
 }
 
+void CameraManager::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	radius += yoffset;
+	if (radius > 9.0f) {
+		radius = 9.0f;
+	}
+	if (radius < 0.1f) {
+		radius = 0.1f;
+	}
+}
+
 void CameraManager::moveByKey(InputManager* input, int KEY)
 {
 	switch (input->getKeyStatus(KEY)) {
 	case InputManager::KeyStatus::HOLD:
 		switch (KEY) {
 		case GLFW_KEY_W:
-			target.z -= time.getDuration() * movement;
+			target += glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.1f, 0.0f)), target - getCameraPosition())) * time.getDuration() * movement;
 			break;
 		case GLFW_KEY_S:
-			target.z += time.getDuration() * movement;
+			target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.1f, 0.0f)), target - getCameraPosition())) * time.getDuration() * movement;
 			break;
 		case GLFW_KEY_A:
-			target.x -= time.getDuration() * movement;
+			target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.1f, 0.0f))) * time.getDuration() * movement;
 			break;
 		case GLFW_KEY_D:
-			target.x += time.getDuration() * movement;
+			target += glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.1f, 0.0f))) * time.getDuration() * movement;
 			break;
 		}
 		break;

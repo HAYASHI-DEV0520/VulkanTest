@@ -238,6 +238,10 @@ private:
 			auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
 			app->cameraManager.mouseCallback(window, xpos, ypos);
 			});
+		glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
+			auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+			app->cameraManager.scrollCallback(window, xoffset, yoffset);
+			});
 		inputManager.registerKey(GLFW_KEY_SPACE);
 		inputManager.registerKey(GLFW_KEY_W);
 		inputManager.registerKey(GLFW_KEY_A);
@@ -1484,8 +1488,11 @@ private:
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-			vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
 			vkDestroyFence(device, inFlightFences[i], nullptr);
+		}
+		
+		for (size_t i = 0; i < swapChainImages.size(); i++) {
+			vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
 		}
 
 		for (size_t i = 0; i < TRANSFER_COUNT; i++) {
@@ -1530,7 +1537,9 @@ int main() {
 		//system("pause");
 		return EXIT_FAILURE;
 	}
-	//system("pause");
+#ifdef NDEBUG
+	system("pause");
+#endif
 
 	return EXIT_SUCCESS;
 }

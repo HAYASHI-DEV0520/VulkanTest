@@ -12,6 +12,7 @@ public:
 	glm::mat4 getCamera();
 	void setCamera(glm::mat4 camera);
 	void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+	void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 	void moveByKey(InputManager* input, int KEY);
 	CameraManager();
 	glm::vec3 getCameraPosition();
