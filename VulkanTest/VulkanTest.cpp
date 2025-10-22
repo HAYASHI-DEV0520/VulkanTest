@@ -26,6 +26,9 @@
 
 #include <chrono>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include "ModelManager.h"
 #include "InputManager.h"
 #include "CameraManager.h"
@@ -253,7 +256,6 @@ private:
 		inputManager.registerEvent(GLFW_KEY_A, [&](InputManager* input) {cameraManager.moveByKey(input, GLFW_KEY_A); });
 		inputManager.registerEvent(GLFW_KEY_D, [&](InputManager* input) {cameraManager.moveByKey(input, GLFW_KEY_D); });
 
-	
 	}
 
 	void initVulkan() {
@@ -283,6 +285,8 @@ private:
 		createCommandPool();
 
 		createCommandBuffers();
+
+		createTextureImage();
 
 		createSyncObjects();
 
@@ -1218,6 +1222,10 @@ private:
 		if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffersTransfer) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate command buffers!");
 		}
+	}
+
+	void createTextureImage() {
+
 	}
 
 	void createSyncObjects() {
