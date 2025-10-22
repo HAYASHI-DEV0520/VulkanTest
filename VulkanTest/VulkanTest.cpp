@@ -1270,6 +1270,20 @@ private:
 		if (vkCreateImage(device, &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create image!");
 		}
+
+		VkMemoryRequirements memRequirements;
+		vkGetImageMemoryRequirements(device, textureImage, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+		if (vkAllocateMemory(device, &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate image memory!");
+		}
+
+		vkBindImageMemory(device, textureImage, textureImageMemory, 0);
 	}
 
 	void createSyncObjects() {
