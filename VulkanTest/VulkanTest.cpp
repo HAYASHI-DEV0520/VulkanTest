@@ -1073,35 +1073,60 @@ private:
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory, true);
 
-		copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+		copyBuffer(stagingBuffer, vertexBuffer, bufferSize, 0);
 
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
 	}
 
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-		vkResetCommandBuffer(commandBuffersTransfer, 0);
-		vkBeginCommandBuffer(commandBuffersTransfer, &beginInfo);
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, size_t differenciate) {
+		VkCommandBuffer commandBuffer = beginSingleTimeCommands(std::nullopt);
 
 		VkBufferCopy copyRegion{};
 		copyRegion.srcOffset = 0;
 		copyRegion.dstOffset = 0;
 		copyRegion.size = size;
-		vkCmdCopyBuffer(commandBuffersTransfer, srcBuffer, dstBuffer, 1, &copyRegion);
-		vkEndCommandBuffer(commandBuffersTransfer);
+		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+		
+		endSingleTimeCommands(commandBuffer, differenciate);
+	}
+
+	VkCommandBuffer beginSingleTimeCommands(std::optional<VkCommandBuffer> commandBufferIn) {
+		VkCommandBuffer commandBuffer;
+		if (commandBufferIn.has_value()) {
+			commandBuffer = commandBufferIn.value();
+			vkResetCommandBuffer(commandBuffer, 0);
+		}
+		else {
+			VkCommandBufferAllocateInfo allocInfo{};
+			allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			allocInfo.commandPool = commandPoolTransfer;
+			allocInfo.commandBufferCount = 1;
+
+			vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+		}
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		//vkResetCommandBuffer(commandBuffer, 0);
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+		return commandBuffer;
+	}
+
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer, size_t differenciate) {
+		vkEndCommandBuffer(commandBuffer);
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffersTransfer;
+		submitInfo.pCommandBuffers = &commandBuffer;
 
-		vkResetFences(device, 1, &transferFences[0]);
-		vkQueueSubmit(transferQueue, 1, &submitInfo, transferFences[0]);
-		vkWaitForFences(device, 1, &transferFences[0], VK_TRUE, UINT64_MAX);
+		vkResetFences(device, 1, &transferFences[differenciate]);
+		vkQueueSubmit(transferQueue, 1, &submitInfo, transferFences[differenciate]);
+		vkWaitForFences(device, 1, &transferFences[differenciate], VK_TRUE, UINT64_MAX);
 	}
 
 	void createIndexBuffer() {
@@ -1120,7 +1145,7 @@ private:
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			indexBuffer, indexBufferMemory, true);
 
-		copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+		copyBuffer(stagingBuffer, indexBuffer, bufferSize, 0);
 
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
