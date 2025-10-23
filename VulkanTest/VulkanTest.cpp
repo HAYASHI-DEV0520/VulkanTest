@@ -101,7 +101,7 @@ private:
 	const uint32_t HEIGHT = 800;
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
-	const int TRANSFER_COUNT = 1;
+	const int TRANSFER_COUNT = 5;
 
 	const std::vector<const char*> validationLayers = {
 		"VK_LAYER_KHRONOS_validation"
@@ -1318,6 +1318,10 @@ private:
 		vkBindImageMemory(device, image, imageMemory, 0);
 	}
 
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+		
+	}
+
 	void createSyncObjects() {
 		imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		renderFinishedSemaphores.resize(swapChainImages.size());
@@ -1507,7 +1511,16 @@ private:
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = 0;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; 
+		/*
+		
+		
+		
+		CAUTION: ONE TIME SUBMIT
+		
+		
+		
+		*/
 		beginInfo.pInheritanceInfo = nullptr;
 
 		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
