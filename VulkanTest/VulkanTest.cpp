@@ -529,7 +529,10 @@ private:
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		}
 
-		return indices.isComplete() && extensionsSupported && swapChainAdequate;
+		VkPhysicalDeviceFeatures supportedFeatures;
+		vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+		return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 	}
 
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
@@ -566,6 +569,8 @@ private:
 		}
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
+		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+		deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1069,7 +1074,7 @@ private:
 	}
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, size_t differenciate) {
-		VkCommandBuffer commandBuffer = beginSingleTimeCommands(std::nullopt);
+		VkCommandBuffer commandBuffer = beginSingleTimeCommands(std::nullopt, true);
 
 		VkBufferCopy copyRegion{};
 		copyRegion.srcOffset = 0;
@@ -1077,10 +1082,10 @@ private:
 		copyRegion.size = size;
 		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 		
-		endSingleTimeCommands(commandBuffer, differenciate);
+		endSingleTimeCommands(commandBuffer, differenciate, true);
 	}
 
-	VkCommandBuffer beginSingleTimeCommands(std::optional<VkCommandBuffer> commandBufferIn) {
+	VkCommandBuffer beginSingleTimeCommands(std::optional<VkCommandBuffer> commandBufferIn, bool isTransfer) {
 		VkCommandBuffer commandBuffer;
 		if (commandBufferIn.has_value()) {
 			commandBuffer = commandBufferIn.value();
@@ -1090,7 +1095,12 @@ private:
 			VkCommandBufferAllocateInfo allocInfo{};
 			allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 			allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-			allocInfo.commandPool = commandPoolTransfer;
+			if (isTransfer) {
+				allocInfo.commandPool = commandPoolTransfer;
+			}
+			else {
+				allocInfo.commandPool = commandPoolGraphic;
+			}
 			allocInfo.commandBufferCount = 1;
 
 			vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
@@ -1105,7 +1115,7 @@ private:
 		return commandBuffer;
 	}
 
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer, size_t differenciate) {
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer, size_t differenciate, bool isTransfer) {
 		vkEndCommandBuffer(commandBuffer);
 
 		VkSubmitInfo submitInfo{};
@@ -1114,7 +1124,7 @@ private:
 		submitInfo.pCommandBuffers = &commandBuffer;
 
 		vkResetFences(device, 1, &transferFences[differenciate]);
-		vkQueueSubmit(transferQueue, 1, &submitInfo, transferFences[differenciate]);
+		vkQueueSubmit((isTransfer ? transferQueue : graphicsQueue), 1, &submitInfo, transferFences[differenciate]);
 		vkWaitForFences(device, 1, &transferFences[differenciate], VK_TRUE, UINT64_MAX);
 	}
 
@@ -1373,8 +1383,8 @@ private:
 	}
 
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-		VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandBuffersTransfer);
-
+		bool isTransfer;
+		
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		barrier.oldLayout = oldLayout;
@@ -1394,6 +1404,7 @@ private:
 		VkPipelineStageFlags destinationStage;
 
 		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+			isTransfer = true;
 			barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT; // be explicit
 			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
@@ -1401,6 +1412,7 @@ private:
 			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
 		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+			isTransfer = false;
 			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
@@ -1411,13 +1423,23 @@ private:
 			throw std::invalid_argument("unsupported layout transition!");
 		}
 
+		VkCommandBuffer commandBuffer;
+
+		if (isTransfer) {
+			commandBuffer = beginSingleTimeCommands(commandBuffersTransfer, isTransfer);
+		}
+		else {
+			commandBuffer = beginSingleTimeCommands(std::nullopt, isTransfer);
+		}
+		
+
 		vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-		endSingleTimeCommands(commandBuffer, 1);
+		endSingleTimeCommands(commandBuffer, 1, isTransfer);
 	}
 
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-		VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandBuffersTransfer);
+		VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandBuffersTransfer, true);
 
 		VkBufferImageCopy region{};
 		region.bufferOffset = 0;
@@ -1445,7 +1467,7 @@ private:
 			&region
 		);
 
-		endSingleTimeCommands(commandBuffer, 1);
+		endSingleTimeCommands(commandBuffer, 1, true);
 	}
 
 	void createSyncObjects() {
