@@ -1089,7 +1089,7 @@ private:
 	}
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, size_t differenciate) {
-		VkCommandBuffer commandBuffer = beginSingleTimeCommands(std::nullopt, true);
+		VkCommandBuffer commandBuffer = setupCommandBuffer(std::nullopt, true);
 
 		VkBufferCopy copyRegion{};
 		copyRegion.srcOffset = 0;
@@ -1097,10 +1097,11 @@ private:
 		copyRegion.size = size;
 		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 		
-		endSingleTimeCommands(commandBuffer, differenciate, true);
+		flushCommandBuffer(commandBuffer, differenciate, true);
 	}
 
-	VkCommandBuffer beginSingleTimeCommands(std::optional<VkCommandBuffer> commandBufferIn, bool isTransfer) {
+
+	VkCommandBuffer setupCommandBuffer(std::optional<VkCommandBuffer> commandBufferIn, bool isTransfer) {
 		VkCommandBuffer commandBuffer;
 		if (commandBufferIn.has_value()) {
 			commandBuffer = commandBufferIn.value();
@@ -1130,7 +1131,7 @@ private:
 		return commandBuffer;
 	}
 
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer, size_t differenciate, bool isTransfer) {
+	void flushCommandBuffer(VkCommandBuffer commandBuffer, size_t differenciate, bool isTransfer) {
 		vkEndCommandBuffer(commandBuffer);
 
 		VkSubmitInfo submitInfo{};
@@ -1310,11 +1311,19 @@ private:
 			VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			textureImage, textureImageMemory);
 
-		transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		VkCommandBuffer commandBuffer = setupCommandBuffer(commandBuffersTransfer, true);
 
-		transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); //
+		transitionImageLayout(commandBuffer, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		copyBufferToImage(commandBuffer, stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+
+		flushCommandBuffer(commandBuffer, 0, true);
+
+		commandBuffer = setupCommandBuffer(std::nullopt, false);
+
+		transitionImageLayout(commandBuffer, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); //
 		
+		flushCommandBuffer(commandBuffer, 1, false);
+
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
 	}
@@ -1415,8 +1424,8 @@ private:
 		vkBindImageMemory(device, image, imageMemory, 0);
 	}
 
-	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-		bool isTransfer;
+	void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+		//bool isTransfer;
 		
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -1437,7 +1446,7 @@ private:
 		VkPipelineStageFlags destinationStage;
 
 		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-			isTransfer = true;
+			//isTransfer = true;
 			barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT; // be explicit
 			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
@@ -1445,7 +1454,7 @@ private:
 			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
 		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-			isTransfer = false;
+			//isTransfer = false;
 			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
@@ -1456,23 +1465,23 @@ private:
 			throw std::invalid_argument("unsupported layout transition!");
 		}
 
-		VkCommandBuffer commandBuffer;
-
+		//VkCommandBuffer commandBuffer;
+		/*
 		if (isTransfer) {
 			commandBuffer = beginSingleTimeCommands(commandBuffersTransfer, isTransfer);
 		}
 		else {
 			commandBuffer = beginSingleTimeCommands(std::nullopt, isTransfer);
 		}
-		
+		*/
 
 		vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-		endSingleTimeCommands(commandBuffer, 1, isTransfer);
+		//endSingleTimeCommands(commandBuffer, 1, isTransfer);
 	}
 
-	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-		VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandBuffersTransfer, true);
+	void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+		//VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandBuffersTransfer, true);
 
 		VkBufferImageCopy region{};
 		region.bufferOffset = 0;
@@ -1500,7 +1509,7 @@ private:
 			&region
 		);
 
-		endSingleTimeCommands(commandBuffer, 1, true);
+		//endSingleTimeCommands(commandBuffer, 1, true);
 	}
 
 	void createSyncObjects() {
