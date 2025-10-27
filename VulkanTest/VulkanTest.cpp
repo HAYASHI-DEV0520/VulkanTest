@@ -149,7 +149,7 @@ private:
 			return attributeDescriptions;
 		}
 	};
-
+	/*
 	const std::vector<Vertex> vertices = {
 		{{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
 		{{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
@@ -160,7 +160,19 @@ private:
 		{{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, { 0.0f, 0.0f }},
 		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 0.0f}, { 1.0f, 0.0f }}
 	};
+	*/
 
+	const std::vector<Vertex> vertices = {
+		{{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+		{{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		{{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+		{{-0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+		{{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		{{0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+		{{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+	};
+	/*
 	const std::vector<uint16_t> indices = { // using uint16_t because less than 65535 vertices
 		0, 1, 2,
 		0, 2, 3,
@@ -175,7 +187,14 @@ private:
 		2, 7, 3,
 		2, 6, 7
 	};
+	*/
 
+	const std::vector<uint16_t> indices = {
+		0, 1, 2,
+		0, 2, 3,
+		4, 5, 6,
+		4, 6, 7
+	};
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily; // graphic-support queue family
 		std::optional<uint32_t> presentFamily;
