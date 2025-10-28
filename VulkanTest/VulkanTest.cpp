@@ -377,6 +377,7 @@ private:
 		createDescriptorPool();
 
 		createDescriptorSets();
+
 	}
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
