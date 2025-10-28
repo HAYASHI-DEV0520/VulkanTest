@@ -23,8 +23,8 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 	lastY = ypos;
 
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-		theta += xoffset * sensitivity;
-		phi -= yoffset * sensitivity;
+		theta -= xoffset * sensitivity;
+		phi += yoffset * sensitivity;
 
 		if (phi > glm::radians(89.0f)) phi = glm::radians(89.0f);
 		if (phi < glm::radians(-89.0f)) phi = glm::radians(-89.0f);
@@ -78,9 +78,9 @@ CameraManager::CameraManager()
 glm::vec3 CameraManager::getCameraPosition()
 {
 	return glm::vec3(
-		target.x + radius * cos(phi) * sin(theta),
-		target.y + radius * cos(phi) * cos(theta),
-		target.z + radius * sin(phi)
+		target.x + radius * sin(phi) * cos(theta),
+		target.y + radius * sin(phi) * sin(theta),
+		target.z + radius * cos(phi)
 	);
 }
 
