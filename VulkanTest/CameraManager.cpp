@@ -23,7 +23,7 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 	lastY = ypos;
 
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-		theta -= xoffset * sensitivity;
+		theta += xoffset * sensitivity;
 		phi -= yoffset * sensitivity;
 
 		if (phi > glm::radians(89.0f)) phi = glm::radians(89.0f);
@@ -33,7 +33,7 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 
 void CameraManager::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	radius += yoffset;
+	radius -= yoffset * 0.3f;
 	if (radius > 9.0f) {
 		radius = 9.0f;
 	}
@@ -48,16 +48,16 @@ void CameraManager::moveByKey(InputManager* input, int KEY)
 	case InputManager::KeyStatus::HOLD:
 		switch (KEY) {
 		case GLFW_KEY_W:
-			target += glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.1f, 0.0f)), target - getCameraPosition())) * time.getDuration() * movement;
+			target += glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f)), target - getCameraPosition())) * time.getDuration() * movement;
 			break;
 		case GLFW_KEY_S:
-			target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.1f, 0.0f)), target - getCameraPosition())) * time.getDuration() * movement;
+			target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f)), target - getCameraPosition())) * time.getDuration() * movement;
 			break;
 		case GLFW_KEY_A:
-			target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.1f, 0.0f))) * time.getDuration() * movement;
+			target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * time.getDuration() * movement;
 			break;
 		case GLFW_KEY_D:
-			target += glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.1f, 0.0f))) * time.getDuration() * movement;
+			target += glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * time.getDuration() * movement;
 			break;
 		}
 		break;
@@ -79,14 +79,14 @@ glm::vec3 CameraManager::getCameraPosition()
 {
 	return glm::vec3(
 		target.x + radius * cos(phi) * sin(theta),
-		target.y + radius * sin(phi),
-		target.z + radius * cos(phi) * cos(theta)
+		target.y + radius * cos(phi) * cos(theta),
+		target.z + radius * sin(phi)
 	);
 }
 
 glm::mat4 CameraManager::getViewMatrix()
 {
 	glm::vec3 cameraPos = getCameraPosition();
-	return glm::lookAt(cameraPos, target, glm::vec3(0.0f, 1.0f, 0.0f));
+	return glm::lookAt(cameraPos, target, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
