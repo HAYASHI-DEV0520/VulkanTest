@@ -2046,7 +2046,7 @@ int main() {
 		//system("pause");
 		return EXIT_FAILURE;
 	}
-#ifdef NDEBUG
+#ifndef NDEBUG
 	system("pause");
 #endif
 
