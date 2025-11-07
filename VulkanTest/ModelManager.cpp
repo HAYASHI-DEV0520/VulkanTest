@@ -41,5 +41,5 @@ ModelManager::ModelManager() {
 	model = glm::mat4(1.0f);
 	duration = 1.0f;
 	angle = glm::radians(90.0f);
-	axis = glm::vec3(0.0f, 1.0f, 0.0f);
+	axis = glm::vec3(0.0f, 0.0f, 1.0f);
 }

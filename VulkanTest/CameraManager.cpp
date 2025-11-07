@@ -26,8 +26,8 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 		theta -= xoffset * sensitivity;
 		phi += yoffset * sensitivity;
 
-		if (phi > glm::radians(89.0f)) phi = glm::radians(89.0f);
-		if (phi < glm::radians(-89.0f)) phi = glm::radians(-89.0f);
+		if (phi > glm::radians(179.5f)) phi = glm::radians(179.5f);
+		if (phi < glm::radians(0.5f)) phi = glm::radians(0.5f);
 	}
 }
 

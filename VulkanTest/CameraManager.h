@@ -27,7 +27,7 @@ private:
 	glm::vec3 target;
 	float radius = 5.0f;
 	float theta = glm::radians(90.0f);
-	float phi = glm::radians(30.0f);
+	float phi = glm::radians(45.0f);
 
 	float movement = 0.9f;
 
