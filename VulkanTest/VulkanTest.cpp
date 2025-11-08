@@ -1480,7 +1480,7 @@ private:
 		mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1; // 1 for original image
 
 		createImage(static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), mipLevels, VK_FORMAT_R8G8B8A8_SRGB,
-			VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			textureImage, textureImageMemory);
 
 		VkCommandBuffer commandBuffer = setupCommandBuffer(commandBuffersTransfer, true);
@@ -1490,14 +1490,23 @@ private:
 
 		flushCommandBuffer(commandBuffer, 0, true);
 
+		/*
 		commandBuffer = setupCommandBuffer(std::nullopt, false);
 
 		transitionImageLayout(commandBuffer, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels); //
 		
 		flushCommandBuffer(commandBuffer, 1, false);
+		*/
 
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
+	}
+
+	void generateMipmaps(VkImage image, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+		VkCommandBuffer commandBuffer = setupCommandBuffer(commandBuffer, true);
+
+		VkImageMemoryBarrier barrier{};
+
 	}
 
 	void createTextureImageView() {
