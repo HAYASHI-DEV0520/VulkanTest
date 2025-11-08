@@ -29,6 +29,11 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 		if (phi > glm::radians(179.5f)) phi = glm::radians(179.5f);
 		if (phi < glm::radians(0.5f)) phi = glm::radians(0.5f);
 	}
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+		target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f)), target - getCameraPosition())) * yoffset * sensitivity;
+		target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * xoffset * sensitivity;
+
+	}
 }
 
 void CameraManager::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
