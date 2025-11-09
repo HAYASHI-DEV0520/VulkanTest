@@ -39,8 +39,8 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 void CameraManager::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	radius -= yoffset * 0.3f;
-	if (radius > 9.0f) {
-		radius = 9.0f;
+	if (radius > 30.0f) {
+		radius = 30.0f;
 	}
 	if (radius < 0.1f) {
 		radius = 0.1f;

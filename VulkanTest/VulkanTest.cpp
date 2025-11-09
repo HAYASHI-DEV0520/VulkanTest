@@ -1967,12 +1967,12 @@ private:
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
-	void updateUniformBuffer(uint32_t currentFrame) {
+	void updateUniformBuffer(uint32_t currentFrame){
 
 		UniformBufferObject ubo{};
 		ubo.model = modelManager.getModel();
 		ubo.view = cameraManager.getViewMatrix();
-		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.0f);
 		ubo.proj[1][1] *= -1; // image will be rendered upside down
 		
 		memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
