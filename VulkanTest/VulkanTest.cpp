@@ -263,7 +263,7 @@ private:
 		std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
 		if (!file.is_open()) {
-			throw std::runtime_error("failed to open file!");
+			throw std::runtime_error("failed to open the file!");
 		}
 
 		size_t fileSize = (size_t)file.tellg();
@@ -2128,7 +2128,8 @@ int main() {
 		//system("pause");
 		return EXIT_FAILURE;
 	}
-#ifndef NDEBUG
+
+#ifdef _DEBUG
 	system("pause");
 #endif
 

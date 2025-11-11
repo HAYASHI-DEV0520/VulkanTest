@@ -1,9 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36518.9 d17.14
+VisualStudioVersion = 17.14.36518.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanTest", "VulkanTest\VulkanTest.vcxproj", "{2B1FDE93-2FD8-4513-8EB4-B942977C0E3F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MipMapCreator", "MipMapCreator\MipMapCreator.vcxproj", "{40A0133C-A43A-4887-A181-B923993FDEA6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2B1FDE93-2FD8-4513-8EB4-B942977C0E3F} = {2B1FDE93-2FD8-4513-8EB4-B942977C0E3F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +26,14 @@ Global
 		{2B1FDE93-2FD8-4513-8EB4-B942977C0E3F}.Release|x64.Build.0 = Release|x64
 		{2B1FDE93-2FD8-4513-8EB4-B942977C0E3F}.Release|x86.ActiveCfg = Release|Win32
 		{2B1FDE93-2FD8-4513-8EB4-B942977C0E3F}.Release|x86.Build.0 = Release|Win32
+		{40A0133C-A43A-4887-A181-B923993FDEA6}.Debug|x64.ActiveCfg = Debug|x64
+		{40A0133C-A43A-4887-A181-B923993FDEA6}.Debug|x64.Build.0 = Debug|x64
+		{40A0133C-A43A-4887-A181-B923993FDEA6}.Debug|x86.ActiveCfg = Debug|Win32
+		{40A0133C-A43A-4887-A181-B923993FDEA6}.Debug|x86.Build.0 = Debug|Win32
+		{40A0133C-A43A-4887-A181-B923993FDEA6}.Release|x64.ActiveCfg = Release|x64
+		{40A0133C-A43A-4887-A181-B923993FDEA6}.Release|x64.Build.0 = Release|x64
+		{40A0133C-A43A-4887-A181-B923993FDEA6}.Release|x86.ActiveCfg = Release|Win32
+		{40A0133C-A43A-4887-A181-B923993FDEA6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
