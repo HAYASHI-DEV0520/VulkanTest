@@ -52,8 +52,6 @@ void _CONVERT(int cmdCount, char** cmd) {
 			return;
 		}
 		filename = filename.substr(0, filename.size() - 4);
-
-
 		if (!stbi_write_png((filename + std::string(buf)).c_str(), texWidth, texHeight, 4, newPixels, texWidth * 4)) {
 			std::cerr << "failed to create mipmap image file!";
 			return;
