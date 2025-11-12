@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <cstring>
+#include <string>
 #include <map>
 #include <unordered_map>
 #include <set>
@@ -1486,7 +1487,7 @@ private:
 		VkCommandBuffer commandBuffer = setupCommandBuffer(commandBuffersTransfer, true);
 
 		transitionImageLayout(commandBuffer, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-		copyBufferToImage(commandBuffer, stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		copyBufferToImage(commandBuffer, stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), 0);
 
 		flushCommandBuffer(commandBuffer, 0, true);
 
@@ -1505,12 +1506,14 @@ private:
 	}
 
 	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+		/*
 		VkFormatProperties formatProperties;
 		vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
 
 		if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
 			throw std::runtime_error("texture image format does not support linear blitting!");
 		}
+		*/
 		
 		VkCommandBuffer commandBuffer = setupCommandBuffer(std::nullopt, false);
 
@@ -1527,16 +1530,28 @@ private:
 		int32_t mipWidth = texWidth;
 		int32_t mipHeight = texHeight;
 
+		auto func = [&](uint32_t level) { 
+			char buf[100];
+			sprintf_s(buf, "_%d.png", level);
+			return TEXTURE_PATH.substr(0, TEXTURE_PATH.size() - 4) + std::string(buf); 
+			};
+
 		for (uint32_t i = 1; i < mipLevels; i++) {
-			barrier.subresourceRange.baseMipLevel = i - 1;
+			barrier.subresourceRange.baseMipLevel = i;
+
+			/*
 			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 			barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+			*/
 
+			/*
 			vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
 				0, nullptr, 0, nullptr, 1, &barrier);
+			*/
 
+			/*
 			VkImageBlit blit{};
 			blit.srcOffsets[0] = { 0, 0, 0 };
 			blit.srcOffsets[1] = { mipWidth, mipHeight, 1 }; // the Z musit be 1 because 2D image has a depth of 1
@@ -1553,20 +1568,49 @@ private:
 
 			vkCmdBlitImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 				1, &blit, VK_FILTER_LINEAR);
+			*/
 
-			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+
+			stbi_uc* pixels = stbi_load(func(i).c_str(), &mipWidth, &mipHeight, nullptr, STBI_rgb_alpha);
+
+			VkDeviceSize imageSize = static_cast<VkDeviceSize>(mipWidth) * mipHeight * 4;
+
+			if (!pixels) {
+				throw std::runtime_error("failed to load texture image!");
+			}
+
+			VkBuffer stagingBuffer;
+			VkDeviceMemory stagingBufferMemory;
+
+			createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				stagingBuffer, stagingBufferMemory, false);
+
+			void* data;
+			vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+			memcpy(data, pixels, static_cast<size_t>(imageSize));
+			vkUnmapMemory(device, stagingBufferMemory);
+
+			stbi_image_free(pixels);
+
+			VkCommandBuffer copyCommandBuffer = setupCommandBuffer(std::nullopt, false);
+			copyBufferToImage(copyCommandBuffer, stagingBuffer, image, mipWidth, mipHeight, i);
+			flushCommandBuffer(copyCommandBuffer, 2, false);
+
+			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 			barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
 			vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 				0, 0, nullptr, 0, nullptr,
 				1, &barrier);
 
-			if (mipWidth > 1) mipWidth /= 2;
-			if (mipHeight > 1) mipHeight /= 2;
+			vkDestroyBuffer(device, stagingBuffer, nullptr);
+			vkFreeMemory(device, stagingBufferMemory, nullptr);
 		}
 
+		/*
 		barrier.subresourceRange.baseMipLevel = mipLevels - 1;
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1575,6 +1619,7 @@ private:
 
 		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 			0, 0, nullptr, 0, nullptr, 1, &barrier);
+		*/
 
 		flushCommandBuffer(commandBuffer, 1, false);
 	}
@@ -1749,7 +1794,7 @@ private:
 		//endSingleTimeCommands(commandBuffer, 1, isTransfer);
 	}
 
-	void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+	void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t mipLevel) {
 		//VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandBuffersTransfer, true);
 
 		VkBufferImageCopy region{};
@@ -1758,7 +1803,7 @@ private:
 		region.bufferImageHeight = 0;
 
 		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		region.imageSubresource.mipLevel = 0;
+		region.imageSubresource.mipLevel = mipLevel;
 		region.imageSubresource.baseArrayLayer = 0;
 		region.imageSubresource.layerCount = 1;
 
