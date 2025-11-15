@@ -180,7 +180,7 @@ private:
 	const uint32_t WIDTH = 1100;
 	const uint32_t HEIGHT = 800;
 
-	const std::string MODEL_PATH = "models/Lowpoly_tree_sample.obj";
+	const std::string MODEL_PATH = "models/viking_room.obj";
 	const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -695,6 +695,7 @@ private:
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 		deviceFeatures.samplerAnisotropy = VK_TRUE;
+		deviceFeatures.sampleRateShading = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1029,9 +1030,9 @@ private:
 
 		VkPipelineMultisampleStateCreateInfo multisampling{};
 		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multisampling.sampleShadingEnable = VK_FALSE;
+		multisampling.sampleShadingEnable = VK_TRUE;
 		multisampling.rasterizationSamples = msaaSamples;
-		multisampling.minSampleShading = 1.0f;
+		multisampling.minSampleShading = .2f;
 		multisampling.pSampleMask = nullptr;
 		multisampling.alphaToCoverageEnable = VK_FALSE;
 		multisampling.alphaToOneEnable = VK_FALSE;
