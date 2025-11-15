@@ -1,4 +1,5 @@
 #include "CameraManager.h"
+#include <iostream>
 
 glm::mat4 CameraManager::getCamera()
 {
@@ -34,6 +35,7 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 		target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * xoffset * sensitivity;
 
 	}
+
 }
 
 void CameraManager::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
@@ -63,6 +65,12 @@ void CameraManager::moveByKey(InputManager* input, int KEY)
 			break;
 		case GLFW_KEY_D:
 			target += glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * time.getDuration() * movement;
+			break;
+		case GLFW_MOUSE_BUTTON_MIDDLE: // //
+			target = glm::vec3(0.0f);
+			radius = 3;
+			lastX = lastY = 0;
+		default:
 			break;
 		}
 		break;
