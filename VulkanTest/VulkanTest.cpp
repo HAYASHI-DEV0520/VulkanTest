@@ -124,7 +124,7 @@ private:
 	VkRenderPass renderPass;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
-	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<std::vector<VkDescriptorSet>> descriptorSets;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -138,10 +138,10 @@ private:
 	std::vector<VkFence> transferFences;
 	uint32_t currentFrame = 0;
 	bool framebufferResized = false;
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-	VkBuffer indexBuffer;
-	VkDeviceMemory indexBufferMemory;
+	std::vector<VkBuffer> vertexBuffers;
+	std::vector<VkDeviceMemory> vertexBufferMemory;
+	std::vector<VkBuffer> indexBuffers;
+	std::vector<VkDeviceMemory> indexBufferMemory;
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
 	std::vector<void*> uniformBuffersMapped;
@@ -167,9 +167,9 @@ private:
 
 	
 
-	std::unordered_map<Vertex, uint32_t> uniqueVertices;
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
+	//std::unordered_map<Vertex, uint32_t> uniqueVertices;
+	//std::vector<Vertex> vertices;
+	//std::vector<uint32_t> indices;
 
 	struct Mesh {
 		std::vector<Vertex> vertices;
@@ -196,8 +196,9 @@ private:
 	const uint32_t WIDTH = 1100;
 	const uint32_t HEIGHT = 800;
 
-	const std::string MODEL_PATH = "models/viking_room.obj";
-	const std::string TEXTURE_PATH = "textures/viking_room.png";
+	const std::string MODEL_PATH = "models/Lowpoly_tree_sample.obj";
+	const std::string TEXTURE_PATH = "textures/";
+	const std::string TEXTURE_PATH_OPT = "textures/viking_room.png";
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	const int TRANSFER_COUNT = 10;
@@ -1260,27 +1261,31 @@ private:
 	}
 
 	void createVertexBuffer() {
-		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+		vertexBuffers.resize(meshes.size());
+		vertexBufferMemory.resize(meshes.size());
+		for (int i = 0; i < meshes.size(); i++ ) {
+			VkDeviceSize bufferSize = sizeof(Vertex) * meshes[i].vertices.size();
 
-		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
+			VkBuffer stagingBuffer;
+			VkDeviceMemory stagingBufferMemory;
 
-		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
-			stagingBufferMemory, false);
+			createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
+				stagingBufferMemory, false);
 
-		void* data;
-		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, vertices.data(), (size_t)bufferSize);
-		vkUnmapMemory(device, stagingBufferMemory);
+			void* data;
+			vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+			memcpy(data, meshes[i].vertices.data(), (size_t)bufferSize);
+			vkUnmapMemory(device, stagingBufferMemory);
 
-		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory, true);
+			createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffers[i], vertexBufferMemory[i], true);
 
-		copyBuffer(stagingBuffer, vertexBuffer, bufferSize, 0);
+			copyBuffer(stagingBuffer, vertexBuffers[i], bufferSize, 0);
 
-		vkDestroyBuffer(device, stagingBuffer, nullptr);
-		vkFreeMemory(device, stagingBufferMemory, nullptr);
+			vkDestroyBuffer(device, stagingBuffer, nullptr);
+			vkFreeMemory(device, stagingBufferMemory, nullptr);
+		}
 	}
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, size_t differenciate) {
@@ -1350,7 +1355,7 @@ private:
 		}
 
 		meshes.clear();
-		meshes.resize(materials.size());
+		meshes.resize(std::max(static_cast<int>(materials.size()), 1));
 
 		for (int m = 0; m < static_cast<int>(materials.size()); m++) {
 			meshes[m].materialId = m;
@@ -1390,7 +1395,12 @@ private:
 						vertex.texCoord = { 0.0f, 0.0f };
 					}
 
-					vertex.color = { 1.0f, 1.0f, 1.0f };
+					if (!materials.empty()) {
+						vertex.color = { materials[matId].diffuse[0], materials[matId].diffuse[1], materials[matId].diffuse[2] };
+					}
+					else {
+						vertex.color = { 1.0, 1.0, 1.0 };
+					}
 
 					uint32_t newIndex = static_cast<uint32_t>(dstMesh.vertices.size());
 					dstMesh.vertices.push_back(vertex);
@@ -1401,28 +1411,34 @@ private:
 			}
 
 		}
+
+		loadTexturesFromMaterials(materials, TEXTURE_PATH);
 	}
 
 	void createIndexBuffer() {
-		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+		indexBuffers.resize(meshes.size());
+		indexBufferMemory.resize(meshes.size());
+		for (int i = 0; i < meshes.size(); i++) {
+			VkDeviceSize bufferSize = sizeof(uint32_t) * meshes[i].indices.size();
 
-		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
-		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			stagingBuffer, stagingBufferMemory, false);
+			VkBuffer stagingBuffer;
+			VkDeviceMemory stagingBufferMemory;
+			createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				stagingBuffer, stagingBufferMemory, false);
 
-		void* data;
-		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, indices.data(), (size_t)bufferSize);
-		vkUnmapMemory(device, stagingBufferMemory);
+			void* data;
+			vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+			memcpy(data, meshes[i].indices.data(), (size_t)bufferSize);
+			vkUnmapMemory(device, stagingBufferMemory);
 
-		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			indexBuffer, indexBufferMemory, true);
+			createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				indexBuffers[i], indexBufferMemory[i], true);
 
-		copyBuffer(stagingBuffer, indexBuffer, bufferSize, 0);
+			copyBuffer(stagingBuffer, indexBuffers[i], bufferSize, 0);
 
-		vkDestroyBuffer(device, stagingBuffer, nullptr);
-		vkFreeMemory(device, stagingBufferMemory, nullptr);
+			vkDestroyBuffer(device, stagingBuffer, nullptr);
+			vkFreeMemory(device, stagingBufferMemory, nullptr);
+		}
 	}
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
@@ -1457,16 +1473,16 @@ private:
 	void createDescriptorPool() {
 		std::array<VkDescriptorPoolSize, 2> poolSize{};
 		poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSize[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * meshes.size());
 
 		poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSize[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSize[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * meshes.size());
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSize.size());
 		poolInfo.pPoolSizes = poolSize.data();
-		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * meshes.size());
 		poolInfo.flags = 0;
 
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
@@ -1475,49 +1491,63 @@ private:
 	}
 
 	void createDescriptorSets() {
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+		descriptorSets.assign(MAX_FRAMES_IN_FLIGHT, std::vector<VkDescriptorSet>(meshes.size()));
+
+		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT * meshes.size(), descriptorSetLayout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = descriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
 		allocInfo.pSetLayouts = layouts.data();
 
-		descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-		if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+		std::vector<VkDescriptorSet> allSets(layouts.size());
+
+		//descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+		if (vkAllocateDescriptorSets(device, &allocInfo, allSets.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = uniformBuffers[i];
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject);
+		int idx = 0;
 
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = textureImageView;
-			imageInfo.sampler = textureSampler;
+		for (int f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
+			for (int m = 0; m < meshes.size(); m++) {
+				descriptorSets[f][m] = allSets[idx++];
+			}
+		}
 
-			std::array<VkWriteDescriptorSet, 2> descriptorWrite{};
-			descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite[0].dstSet = descriptorSets[i];
-			descriptorWrite[0].dstBinding = 0;
-			descriptorWrite[0].dstArrayElement = 0;
-			descriptorWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrite[0].descriptorCount = 1;
-			descriptorWrite[0].pBufferInfo = &bufferInfo;
-			descriptorWrite[0].pImageInfo = nullptr;
-			descriptorWrite[0].pTexelBufferView = nullptr;
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			for (int m = 0; m < meshes.size(); m++) {
+				VkDescriptorBufferInfo bufferInfo{};
+				bufferInfo.buffer = uniformBuffers[i];
+				bufferInfo.offset = 0;
+				bufferInfo.range = sizeof(UniformBufferObject);
 
-			descriptorWrite[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite[1].dstSet = descriptorSets[i];
-			descriptorWrite[1].dstBinding = 1;
-			descriptorWrite[1].dstArrayElement = 0;
-			descriptorWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrite[1].descriptorCount = 1;
-			descriptorWrite[1].pImageInfo = &imageInfo;
+				VkDescriptorImageInfo imageInfo{};
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo.imageView = textures[m].view;
+				imageInfo.sampler = textures[m].sampler;
 
-			vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrite.size()), descriptorWrite.data(), 0, nullptr);
+				std::array<VkWriteDescriptorSet, 2> descriptorWrite{};
+				descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrite[0].dstSet = descriptorSets[i][m];
+				descriptorWrite[0].dstBinding = 0;
+				descriptorWrite[0].dstArrayElement = 0;
+				descriptorWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorWrite[0].descriptorCount = 1;
+				descriptorWrite[0].pBufferInfo = &bufferInfo;
+				descriptorWrite[0].pImageInfo = nullptr;
+				descriptorWrite[0].pTexelBufferView = nullptr;
+
+				descriptorWrite[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrite[1].dstSet = descriptorSets[i][m];
+				descriptorWrite[1].dstBinding = 1;
+				descriptorWrite[1].dstArrayElement = 0;
+				descriptorWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrite[1].descriptorCount = 1;
+				descriptorWrite[1].pImageInfo = &imageInfo;
+
+				vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrite.size()), descriptorWrite.data(), 0, nullptr);
+			}
 		}
 	}
 	
@@ -1547,7 +1577,7 @@ private:
 		Texture tex{};
 
 		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		stbi_uc* pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		if (!pixels) {
@@ -1589,7 +1619,7 @@ private:
 		flushCommandBuffer(commandBuffer, 1, false);
 		*/
 
-		generateMipmaps(tex.image, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
+		generateMipmaps(tex.image, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels, filename);
 
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
@@ -1601,7 +1631,33 @@ private:
 		return tex;
 	}
 
-	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+	void loadTexturesFromMaterials(const std::vector<tinyobj::material_t>& materials,
+		const std::string& basedir) {
+		textures.clear();
+		textures.resize(std::max(static_cast<int>(materials.size()), 1));
+		size_t i = 0;
+		for (; i < materials.size(); i++) {
+			const auto& m = materials[i];
+
+			if (!m.diffuse_texname.empty()) {
+
+
+				std::cerr << m.diffuse_texname << " ";
+
+
+				std::string texPath = basedir + m.diffuse_texname;
+				textures[i] = createTextureFromFile(texPath);
+			}
+			else {
+				textures[i] = createTextureFromFile(TEXTURE_PATH_OPT);
+			}
+		}
+		if (i == 0) {
+			textures[0] = createTextureFromFile(TEXTURE_PATH_OPT);
+		}
+	}
+
+	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, const std::string& filename) {
 		/*
 		VkFormatProperties formatProperties;
 		vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
@@ -1629,7 +1685,7 @@ private:
 		auto func = [&](uint32_t level) { 
 			char buf[100];
 			sprintf_s(buf, "_%d.png", level);
-			return TEXTURE_PATH.substr(0, TEXTURE_PATH.size() - 4) + std::string(buf); 
+			return filename.substr(0, filename.size() - 4) + std::string(buf); 
 			};
 
 		for (uint32_t i = 1; i < mipLevels; i++) {
@@ -2163,27 +2219,28 @@ private:
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-		VkBuffer vertexBuffers[] = { vertexBuffer };
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+		for (int i = 0; i < meshes.size(); i++) {
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffers[i], offsets);
+			vkCmdBindIndexBuffer(commandBuffer, indexBuffers[i], 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame][i], 0, nullptr);
 
-		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(swapChainExtent.width);
-		viewport.height = static_cast<float>(swapChainExtent.height);
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+			VkViewport viewport{};
+			viewport.x = 0.0f;
+			viewport.y = 0.0f;
+			viewport.width = static_cast<float>(swapChainExtent.width);
+			viewport.height = static_cast<float>(swapChainExtent.height);
+			viewport.minDepth = 0.0f;
+			viewport.maxDepth = 1.0f;
+			vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
-		scissor.extent = swapChainExtent;
-		vkCmdSetScissor(commandBuffer, 0, 1, &scissor); // set dynamic
+			VkRect2D scissor{};
+			scissor.offset = { 0, 0 };
+			scissor.extent = swapChainExtent;
+			vkCmdSetScissor(commandBuffer, 0, 1, &scissor); // set dynamic
 
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshes[i].indices.size()), 1, 0, 0, 0);
+		}
 
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -2213,11 +2270,14 @@ private:
 
 		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
-		vkDestroyBuffer(device, indexBuffer, nullptr);
-		vkFreeMemory(device, indexBufferMemory, nullptr);
+		for (int i = 0; i < meshes.size(); i++) {
+			vkDestroyBuffer(device, indexBuffers[i], nullptr);
+			vkFreeMemory(device, indexBufferMemory[i], nullptr);
 
-		vkDestroyBuffer(device, vertexBuffer, nullptr);
-		vkFreeMemory(device, vertexBufferMemory, nullptr);
+			vkDestroyBuffer(device, vertexBuffers[i], nullptr);
+			vkFreeMemory(device, vertexBufferMemory[i], nullptr);
+		}
+		
 
 		vkDestroyPipeline(device, graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
