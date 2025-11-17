@@ -171,7 +171,21 @@ private:
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 
+	struct Mesh {
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
+		int materialId;
+	};
 
+	struct Texture {
+		VkImage image;
+		VkDeviceMemory memory;
+		VkImageView view;
+		VkSampler sampler;
+	};
+
+	std::vector<Mesh> meshes;
+	std::vector<Texture> textures;
 
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
@@ -371,10 +385,6 @@ private:
 		createDepthResources();
 
 		createFramebuffers();
-
-		createTextureImage();
-
-		createTextureImageView();
 
 		createTextureSampler();
 
@@ -1338,31 +1348,58 @@ private:
 		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, &err, MODEL_PATH.c_str())) {
 			throw std::runtime_error(err);
 		}
+
+		meshes.clear();
+		meshes.resize(materials.size());
+
+		for (int m = 0; m < static_cast<int>(materials.size()); m++) {
+			meshes[m].materialId = m;
+		}
+
 		for (const auto& shape : shapes) {
-			for (const auto& index : shape.mesh.indices) {
-				Vertex vertex{};
+			size_t indexOffset = 0;
+			const auto& mesh = shape.mesh;
 
-				vertex.pos = {
-					attrib.vertices[3 * index.vertex_index + 0],
-					attrib.vertices[3 * index.vertex_index + 1],
-					attrib.vertices[3 * index.vertex_index + 2]
-				};
+			for (size_t f = 0; f < mesh.num_face_vertices.size(); f++) {
+				int fv = mesh.num_face_vertices[f];
+				int matId = mesh.material_ids.empty() ? -1 : mesh.material_ids[f];
 
-				vertex.texCoord = {
-					attrib.texcoords[2 * index.texcoord_index + 0],
-					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-				};
-
-				vertex.color = { 1.0f, 1.0f, 1.0f };
-				
-				if (uniqueVertices.count(vertex) == 0) {
-					uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-					vertices.push_back(vertex);
+				if (matId < 0 || matId >= static_cast<int>(materials.size())) {
+					matId = 0;
 				}
 
-				indices.push_back(uniqueVertices[vertex]);
+				Mesh& dstMesh = meshes[matId];
 
+				for (int v = 0; v < fv; v++) {
+					tinyobj::index_t idx = mesh.indices[indexOffset + v];
+					Vertex vertex{};
+
+					vertex.pos = {
+						attrib.vertices[3 * idx.vertex_index + 0],
+						attrib.vertices[3 * idx.vertex_index + 1],
+						attrib.vertices[3 * idx.vertex_index + 2]
+					};
+
+					if (idx.texcoord_index >= 0) {
+						vertex.texCoord = {
+							attrib.texcoords[2 * idx.texcoord_index + 0],
+							1.0f - attrib.texcoords[2 * idx.texcoord_index + 1]
+						};
+					}
+					else {
+						vertex.texCoord = { 0.0f, 0.0f };
+					}
+
+					vertex.color = { 1.0f, 1.0f, 1.0f };
+
+					uint32_t newIndex = static_cast<uint32_t>(dstMesh.vertices.size());
+					dstMesh.vertices.push_back(vertex);
+					dstMesh.indices.push_back(newIndex);
+				}
+
+				indexOffset += fv;
 			}
+
 		}
 	}
 
@@ -1506,7 +1543,9 @@ private:
 		}
 	}
 
-	void createTextureImage() {
+	Texture createTextureFromFile(const std::string& filename) {
+		Texture tex{};
+
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -1533,12 +1572,12 @@ private:
 
 		createImage(static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB,
 			VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			textureImage, textureImageMemory);
+			tex.image, tex.memory);
 
 		VkCommandBuffer commandBuffer = setupCommandBuffer(commandBuffersTransfer, true);
 
-		transitionImageLayout(commandBuffer, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-		copyBufferToImage(commandBuffer, stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), 0);
+		transitionImageLayout(commandBuffer, tex.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
+		copyBufferToImage(commandBuffer, stagingBuffer, tex.image, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), 0);
 
 		flushCommandBuffer(commandBuffer, 0, true);
 
@@ -1550,10 +1589,16 @@ private:
 		flushCommandBuffer(commandBuffer, 1, false);
 		*/
 
-		generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
+		generateMipmaps(tex.image, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
 
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+		tex.view = createImageView(tex.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+		
+		tex.sampler = textureSampler;
+	
+		return tex;
 	}
 
 	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
@@ -1675,10 +1720,6 @@ private:
 		
 
 		flushCommandBuffer(commandBuffer, 1, false);
-	}
-
-	void createTextureImageView() {
-		textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 	}
 
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
