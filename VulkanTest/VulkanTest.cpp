@@ -182,6 +182,7 @@ private:
 		VkDeviceMemory memory;
 		VkImageView view;
 		VkSampler sampler;
+
 	};
 
 	std::vector<Mesh> meshes;
@@ -196,9 +197,10 @@ private:
 	const uint32_t WIDTH = 1100;
 	const uint32_t HEIGHT = 800;
 
-	const std::string MODEL_PATH = "models/Lowpoly_tree_sample.obj";
-	const std::string TEXTURE_PATH = "textures/";
-	const std::string TEXTURE_PATH_OPT = "textures/viking_room.png";
+	const std::string MODEL_PATH = "models/Datsun_280Z.obj";
+	const std::string MODEL_PATH_WITHOUT_FILE = "models/";
+	const std::string TEXTURE_PATH = "models/";
+	const std::string TEXTURE_PATH_OPT = "textures/test_diff.png";
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	const int TRANSFER_COUNT = 10;
@@ -1349,10 +1351,13 @@ private:
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
 		std::string err;
+		std::string warn;
 
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, &err, MODEL_PATH.c_str())) {
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str(), MODEL_PATH_WITHOUT_FILE.c_str())) {
 			throw std::runtime_error(err);
 		}
+
+		std::cerr << warn << std::endl;
 
 		meshes.clear();
 		meshes.resize(std::max(static_cast<int>(materials.size()), 1));
@@ -1642,10 +1647,13 @@ private:
 			if (!m.diffuse_texname.empty()) {
 
 
-				std::cerr << m.diffuse_texname << " ";
+				
 
 
 				std::string texPath = basedir + m.diffuse_texname;
+
+				std::cerr << texPath << " ";
+
 				textures[i] = createTextureFromFile(texPath);
 			}
 			else {
@@ -2276,6 +2284,12 @@ private:
 
 			vkDestroyBuffer(device, vertexBuffers[i], nullptr);
 			vkFreeMemory(device, vertexBufferMemory[i], nullptr);
+		}
+
+		for (int i = 0; i < textures.size(); i++) {
+			vkDestroyImage(device, textures[i].image, nullptr);
+			vkDestroyImageView(device, textures[i].view, nullptr);
+			vkFreeMemory(device, textures[i].memory, nullptr);
 		}
 		
 
