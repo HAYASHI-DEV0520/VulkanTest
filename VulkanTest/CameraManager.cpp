@@ -24,15 +24,15 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 	lastY = ypos;
 
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-		theta -= xoffset * sensitivity;
+		theta += xoffset * sensitivity;
 		phi += yoffset * sensitivity;
 
 		if (phi > glm::radians(179.5f)) phi = glm::radians(179.5f);
 		if (phi < glm::radians(0.5f)) phi = glm::radians(0.5f);
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-		target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f)), target - getCameraPosition())) * yoffset * sensitivity * 100.0f;
-		target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * xoffset * sensitivity * 100.0f;
+		target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f)), target - getCameraPosition())) * yoffset * sensitivity * 100.0f;
+		target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f))) * xoffset * sensitivity * 100.0f;
 
 	}
 
@@ -40,9 +40,9 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 
 void CameraManager::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	radius -= yoffset * 0.3f;
-	if (radius > 100.0f) {
-		radius = 100.0f;
+	radius -= yoffset * 10.0f;
+	if (radius > 1000.0f) {
+		radius = 1000.0f;
 	}
 	if (radius < 0.1f) {
 		radius = 0.1f;
@@ -92,14 +92,14 @@ glm::vec3 CameraManager::getCameraPosition()
 {
 	return glm::vec3(
 		target.x + radius * sin(phi) * cos(theta),
-		target.y + radius * sin(phi) * sin(theta),
-		target.z + radius * cos(phi)
+		target.y + radius * cos(phi),
+		target.z + radius * sin(phi) * sin(theta)
 	);
 }
 
 glm::mat4 CameraManager::getViewMatrix()
 {
 	glm::vec3 cameraPos = getCameraPosition();
-	return glm::lookAt(cameraPos, target, glm::vec3(0.0f, 0.0f, 1.0f));
+	return glm::lookAt(cameraPos, target, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
