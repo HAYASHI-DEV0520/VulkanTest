@@ -197,7 +197,7 @@ private:
 	const uint32_t WIDTH = 1100;
 	const uint32_t HEIGHT = 800;
 
-	const std::string MODEL_PATH = "models/Datsun_280Z.obj";
+	const std::string MODEL_PATH = "models/Eunha.obj";
 	const std::string MODEL_PATH_WITHOUT_FILE = "models/";
 	const std::string TEXTURE_PATH = "models/";
 	const std::string TEXTURE_PATH_OPT = "textures/test_diff.png";
@@ -1652,7 +1652,7 @@ private:
 
 				std::string texPath = basedir + m.diffuse_texname;
 
-				std::cerr << texPath << " ";
+				std::cerr << texPath << std::endl;
 
 				textures[i] = createTextureFromFile(texPath);
 			}
@@ -1690,9 +1690,15 @@ private:
 		int32_t mipWidth = texWidth;
 		int32_t mipHeight = texHeight;
 
+		bool isBMP = false;
+
+		if (filename.substr(filename.size() - 3, 3) == std::string("bmp")) {
+			isBMP = true;
+		}
+
 		auto func = [&](uint32_t level) { 
 			char buf[100];
-			sprintf_s(buf, "_%d.png", level);
+			sprintf_s(buf, isBMP? "_%d.bmp" : "_%d.png", level);
 			return filename.substr(0, filename.size() - 4) + std::string(buf); 
 			};
 
@@ -2185,7 +2191,7 @@ private:
 		UniformBufferObject ubo{};
 		ubo.model = modelManager.getModel();
 		ubo.view = cameraManager.getViewMatrix();
-		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.0f);
+		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.0f);
 		ubo.proj[1][1] *= -1; // image will be rendered upside down
 		
 		memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));

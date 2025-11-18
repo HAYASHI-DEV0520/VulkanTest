@@ -31,8 +31,8 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 		if (phi < glm::radians(0.5f)) phi = glm::radians(0.5f);
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-		target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f)), target - getCameraPosition())) * yoffset * sensitivity;
-		target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * xoffset * sensitivity;
+		target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f)), target - getCameraPosition())) * yoffset * sensitivity * 100.0f;
+		target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * xoffset * sensitivity * 100.0f;
 
 	}
 
@@ -41,8 +41,8 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 void CameraManager::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	radius -= yoffset * 0.3f;
-	if (radius > 30.0f) {
-		radius = 30.0f;
+	if (radius > 100.0f) {
+		radius = 100.0f;
 	}
 	if (radius < 0.1f) {
 		radius = 0.1f;
@@ -82,7 +82,7 @@ void CameraManager::moveByKey(InputManager* input, int KEY)
 
 CameraManager::CameraManager()
 {
-	radius = 3;
+	radius = 30;
 	target = glm::vec3(0.0f);
 	camera = glm::mat4(1.0f);
 	lastX = lastY = 0;
