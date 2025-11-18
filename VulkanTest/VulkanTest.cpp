@@ -180,7 +180,7 @@ private:
 	const uint32_t WIDTH = 1100;
 	const uint32_t HEIGHT = 800;
 
-	const std::string MODEL_PATH = "models/viking_room.obj";
+	const std::string MODEL_PATH = "models/Datsun_280Z.obj";
 	const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
