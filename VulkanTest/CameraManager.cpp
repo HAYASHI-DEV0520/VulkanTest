@@ -31,8 +31,8 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 		if (phi < glm::radians(0.5f)) phi = glm::radians(0.5f);
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-		target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f)), target - getCameraPosition())) * yoffset * sensitivity * 100.0f;
-		target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f))) * xoffset * sensitivity * 100.0f;
+		target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f)), target - getCameraPosition())) * yoffset * sensitivity * scale;
+		target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f))) * xoffset * sensitivity * scale;
 
 	}
 
@@ -40,9 +40,10 @@ void CameraManager::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 
 void CameraManager::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	radius -= yoffset * 10.0f;
-	if (radius > 1000.0f) {
-		radius = 1000.0f;
+	radius -= yoffset * scale / 10.0f;
+	float max = 10.0f * scale;
+	if (radius > max) {
+		radius = max;
 	}
 	if (radius < 0.1f) {
 		radius = 0.1f;
@@ -55,16 +56,16 @@ void CameraManager::moveByKey(InputManager* input, int KEY)
 	case InputManager::KeyStatus::HOLD:
 		switch (KEY) {
 		case GLFW_KEY_W:
-			target += glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f)), target - getCameraPosition())) * time.getDuration() * movement;
+			target += glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f)), target - getCameraPosition())) * time.getDuration() * scale;
 			break;
 		case GLFW_KEY_S:
-			target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f)), target - getCameraPosition())) * time.getDuration() * movement;
+			target -= glm::normalize(glm::cross(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f)), target - getCameraPosition())) * time.getDuration() * scale;
 			break;
 		case GLFW_KEY_A:
-			target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * time.getDuration() * movement;
+			target -= glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f))) * time.getDuration() * scale;
 			break;
 		case GLFW_KEY_D:
-			target += glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 0.0f, 1.0f))) * time.getDuration() * movement;
+			target += glm::normalize(glm::cross(target - getCameraPosition(), glm::vec3(0.0f, 1.0f, 0.0f))) * time.getDuration() * scale;
 			break;
 		case GLFW_MOUSE_BUTTON_MIDDLE: // //
 			target = glm::vec3(0.0f);
@@ -82,7 +83,7 @@ void CameraManager::moveByKey(InputManager* input, int KEY)
 
 CameraManager::CameraManager()
 {
-	radius = 30;
+	radius = 3 * scale;
 	target = glm::vec3(0.0f);
 	camera = glm::mat4(1.0f);
 	lastX = lastY = 0;
