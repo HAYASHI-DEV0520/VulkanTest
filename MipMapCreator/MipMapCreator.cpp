@@ -35,6 +35,14 @@ void _CONVERT(int cmdCount, char** cmd) {
 
 	stbi_uc* endPixels = nullptr;
 
+	std::string filename = std::string(cmd[2]);
+
+	bool isBMP = false;
+
+	if (filename.substr(filename.size() - 3, 3) == std::string("bmp")) {
+		isBMP = true;
+	}
+
 	for (uint32_t i = 1; i < mipLevels; i++) {
 
 		stbi_uc* newPixels = stbir_resize_uint8_srgb(pixels, texWidth, texHeight, texWidth * 4, nullptr,
@@ -44,19 +52,23 @@ void _CONVERT(int cmdCount, char** cmd) {
 		texHeight = (texHeight > 1 ? texHeight / 2 : 1);
 
 		char buf[10];
-		std::sprintf(buf, "_%d.png", static_cast<int>(i));
+		std::sprintf(buf, isBMP ? "_%d.bmp" : "_%d.png", static_cast<int>(i));
 
-		std::string filename = std::string(cmd[2]);
-		if (filename.substr(filename.size() - 4, 4) != ".png" && filename.substr(filename.size() - 4, 4) != ".jpg") {
+		
+		if (!isBMP && filename.substr(filename.size() - 4, 4) != ".png" && filename.substr(filename.size() - 4, 4) != ".jpg") {
 			std::cerr << "not jpg or png file? aborting..";
 			return;
 		}
-		filename = filename.substr(0, filename.size() - 4);
-		if (!stbi_write_png((filename + std::string(buf)).c_str(), texWidth, texHeight, 4, newPixels, texWidth * 4)) {
+
+		if (!isBMP && !stbi_write_png((filename.substr(0, filename.size() - 4) + std::string(buf)).c_str(), texWidth, texHeight, 4, newPixels, texWidth * 4)) {
 			std::cerr << "failed to create mipmap image file!";
 			return;
 		}
 
+		if (isBMP && !stbi_write_bmp((filename.substr(0, filename.size() - 4) + std::string(buf)).c_str(), texWidth, texHeight, 4, newPixels)) {
+			std::cerr << "failed to create mipmap image file!";
+			return;
+		}
 		free(pixels);
 		pixels = newPixels;
 		endPixels = newPixels;

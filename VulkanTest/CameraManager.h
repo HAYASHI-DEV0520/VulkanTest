@@ -23,13 +23,14 @@ private:
 	bool firstMouse = true;
 
 	float sensitivity = 0.005f;
+	float scale = 100.0f;
 
 	glm::vec3 target;
 	float radius = 5.0f;
 	float theta = glm::radians(90.0f);
 	float phi = glm::radians(45.0f);
 
-	float movement = 0.9f;
+	float movement = 1.0f;
 
 	TimeManager time;
 	
